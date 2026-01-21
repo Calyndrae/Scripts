@@ -1,8 +1,8 @@
 ' --- 1. 自动请求管理员权限 ---
 Set objShell = CreateObject("Shell.Application")
 If Not WScript.Arguments.Named.Exists("elevate") Then
-    objShell.ShellExecute "wscript.exe", Chr(34) & WScript.ScriptFullName & Chr(34) & " /elevate", "", "runas", 1
-    WScript.Quit
+    objShell.ShellExecute "wscript.exe", Chr(34) & WScript.ScriptFullName & Chr(34) & " /elevate", "", "runas", 1
+    WScript.Quit
 End If
 
 Set fso = CreateObject("Scripting.FileSystemObject")
