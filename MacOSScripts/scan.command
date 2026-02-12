@@ -1,50 +1,42 @@
 #!/bin/bash
 clear
 echo "===================================================="
-echo "          极速强力扫描器 (TOP 5 TARGETS)            "
+echo "          局域网用户-IP 关联探测器 (macOS版)          "
 echo "===================================================="
 
-# 自动检测你的网段
-SUBNET="10.0.192"
-echo "[*] 正在扫描网段: $SUBNET.x ..."
-echo "[*] 正在尝试多种协议解析设备名..."
+# 指定你之前发现的活跃网段
+NETWORK="10.0.192"
 
-count=0
-# 遍历可能的 IP 范围 (根据你之前的扫描结果)
-for i in {5..60}; do
-    if [ $count -ge 5 ]; then break; fi
+echo "[*] 正在扫描网段: $NETWORK.0/24..."
+echo "[*] 注意：若目标开启强力防火墙，用户名可能显示为“未知”"
+echo "----------------------------------------------------"
+
+for i in {1..254}; do
+    IP="$NETWORK.$i"
     
-    IP="$SUBNET.$i"
-    
-    # 快速 Ping 检测存活
-    if ping -c 1 -t 1 $IP > /dev/null 2>&1; then
-        echo "----------------------------------------------------"
-        echo "目标 [$((count+1))]: $IP"
+    # 快速确认 IP 是否在线
+    if ping -c 1 -t 0.5 $IP > /dev/null 2>&1; then
         
-        # 1. 尝试 DNS 逆向解析 (最快)
-        NAME=$(host $IP | awk '{print $NF}' | sed 's/\.$//')
-        if [[ "$NAME" == *"pointer"* || "$NAME" == *"reached"* ]]; then NAME="未知"; fi
+        # 1. 抓取 NetBIOS 信息 (最容易暴露用户名的地方)
+        # Windows 的 NetBIOS 会话中，<03> 记录通常是当前登录的用户名
+        NB_INFO=$(nmblookup -A $IP 2>/dev/null)
+        HOSTNAME=$(echo "$NB_INFO" | grep '<00>' | grep -v 'GROUP' | head -n 1 | awk '{print $1}')
+        USER_LOGGED=$(echo "$NB_INFO" | grep '<03>' | grep -v 'GROUP' | head -n 1 | awk '{print $1}')
         
-        # 2. 尝试 NetBIOS (强力探测)
-        if [ "$NAME" == "未知" ]; then
-            NAME=$(nmblookup -A $IP | grep '<00>' | grep -v 'GROUP' | head -n 1 | awk '{print $1}')
-        fi
-        
-        # 3. 尝试 SMB 状态探测
-        if [ -z "$NAME" ]; then
-            NAME=$(smbutil status $IP 2>/dev/null | grep "Server:" | awk '{print $2}')
+        # 2. 如果方法1失败，尝试 SMB 状态探测
+        if [ -z "$HOSTNAME" ]; then
+            HOSTNAME=$(smbutil status $IP 2>/dev/null | grep "Server:" | awk '{print $2}')
         fi
 
-        # 4. 获取 IPv6
-        IPV6=$(ndp -an | grep $IP | awk '{print $1}' | head -n 1)
-
-        echo "设备名称: ${NAME:-"无法解析 (防火墙严密封锁)"}"
-        echo "IPv6 地址: ${IPV6:-"未发现"}"
-        
-        ((count++))
+        # 3. 输出结果
+        if [ ! -z "$HOSTNAME" ] || [ ! -z "$USER_LOGGED" ]; then
+            echo "IPv4 地址: $IP"
+            echo "设备名称: ${HOSTNAME:-"未知"}"
+            echo "当前登录: ${USER_LOGGED:-"无法读取 (账号已隐藏)"}"
+            echo "----------------------------------------------------"
+        fi
     fi
 done
 
-echo "===================================================="
-echo "扫描前 5 台设备完成。"
-read -p "按回车键退出..."
+echo "[*] 扫描完成！"
+read -p "按回车退出..."
