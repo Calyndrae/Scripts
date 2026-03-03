@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Cyrene Assistant",
-  "version": "1.0",
-  "description": "Native Chrome Extension for Cyrene AI.",
+  "version": "22.0",
+  "description": "Native Extension with Anti-CSP Popup Bypass.",
   "permissions": [
     "storage",
     "activeTab",
@@ -13,13 +13,17 @@
     "https://api.deepseek.com/*",
     "https://lite.duckduckgo.com/*"
   ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Open Cyrene External"
+  },
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["cyrene.js"],
       "run_at": "document_end"
     }
   ]
