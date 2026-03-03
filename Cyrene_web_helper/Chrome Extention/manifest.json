@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Cyrene Assistant",
+  "version": "1.0",
+  "description": "Native Chrome Extension for Cyrene AI.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*/*",
+    "https://api.deepseek.com/*",
+    "https://lite.duckduckgo.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
